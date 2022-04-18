@@ -26,6 +26,7 @@ preferences {
         input name: "daysOfChag", type: "enum", options: ["1","2"], title: "Days of chag", description: "Number of days you observe chag (does not apply to Rosh Hashanah or Yom Kippur)", required: true
         input name: "hubVarStartTime", type: "string", title: "Hub variable for Shabbat/chag start", description: "Name of an already-created Hub variable in DateTime format. If Shabbat or a holiday starts today, that start time will be assigned to the specified variable.", required: false
         input name: "hubVarEndTime", type: "string", title: "Hub variable for Shabbat/chag end", description: "Name of an already-created Hub variable in DateTime format. If Shabbat or a holiday ends today, that end time (as 8.5 degrees) will be assigned to the specified variable.", required: false
+        input name: "debugOffset", type: "Number", title: "Debug Offset", description: "Number of minutes in the future (or past if negative) to pretend it is right now. May be weird; for debug purposes only", required: false
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
     }
 }
@@ -90,7 +91,11 @@ void componentOff(cd){
 def callApi() {
     def lat = location.latitude.setScale(2, BigDecimal.ROUND_HALF_UP) // round for privacy
     def lon = location.longitude.setScale(2, BigDecimal.ROUND_HALF_UP)
-    def url = "https://api.zmanapi.com/?lat=${lat}&lon=${lon}&chagdays=${settings.daysOfChag}"
+    String offsetString = ""
+    if (settings.debugOffset) {
+        offsetString = "&offset=" + settings.debugOffset
+    }
+    def url = "https://api.zmanapi.com/?lat=${lat}&lon=${lon}&chagdays=${settings.daysOfChag}${offsetString}"
     def results = ""
     logDebug("Requesting data from ${url}")
     try {
