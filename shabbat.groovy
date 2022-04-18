@@ -18,6 +18,7 @@ metadata {
         attribute "shabbatOrChagToday", "boolean"
         attribute "shabbatOrChagTonight", "boolean"
         attribute "shabbatOrChagNow", "boolean"
+        attribute "secsUntilNextChange", "number"
     }
 }
 
@@ -38,6 +39,8 @@ def installed() {
         [label: "${device.displayName} (Shabbat Today)", isComponent: true])
     addChildDevice("hubitat", "Generic Component Switch", "${device.deviceNetworkId}-tonight",
         [label: "${device.displayName} (Shabbat Tonight)", isComponent: true])
+    addChildDevice("hubitat", "Generic Component Switch", "${device.deviceNetworkId}-now",
+        [label: "${device.displayName} (Shabbat Now)", isComponent: true])
 }
 
 def updated() {
@@ -68,6 +71,13 @@ def childSwitchOn(String whichSwitch) {
 def childSwitchOff(String whichSwitch) {
     def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
     cd.parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
+}
+
+def startShabbatRightNow() {
+    childSwitchOn("now")
+}
+def endShabbatRightNow() {
+    childSwitchOff("now")
 }
 
 // methods to capture someone else triggering child devices
@@ -121,6 +131,9 @@ def callApi() {
         sendEvent(name: "shabbatOrChagToday", value: isShabbatToday)
         sendEvent(name: "shabbatOrChagTonight", value: isShabbatTonight)
         sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
+        unschedule(startShabbatRightNow)
+        unschedule(endShabbatRightNow)
+
 
         if (isShabbatToday) {
             logDebug("Turning on child 'today' switch.")
@@ -136,8 +149,18 @@ def callApi() {
             logDebug("Turning off child 'tonight' switch.")
             childSwitchOff("tonight")
         }
+        if (isShabbatNow) {
+            logDebug("Turning on child 'now' switch.")
+            childSwitchOn("now")
+        } else {
+            logDebug("Turning off child 'now' switch.")
+            childSwitchOff("now")
+        }
 
         if (!isShabbatToday && isShabbatTonight) {
+            long secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
+            sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
+            logDebug("Shabbat/chag is starting (or did start) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarStartTime) {
                 logDebug("Assigning Shabbat/chag start time to hub variable.")
                 String sunsetTime = dateStringConvert(results.sunset)
@@ -150,8 +173,18 @@ def callApi() {
                     log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
                 }
             }
+            if (secsUntilNextChange > 0) {
+                logDebug("Scheduling turning that switch on then.")
+                runIn(secsUntilNextChange, startShabbatRightNow)
+                logDebug("And scheduling an another update for a couple minutes after that.")
+                unschedule(push)
+                runIn(secsUntilNextChange + 120, push)
+            }
         }
         if (isShabbatToday && !isShabbatTonight) {
+            long secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
+            sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
+            logDebug("Shabbat/chag is ending (or did end) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarEndTime) {
                 logDebug("Assigning Shabbat/chag end time to hub variable.")
                 String nightfallTime = dateStringConvert(results.jewish_twilight_end)
@@ -163,6 +196,13 @@ def callApi() {
                 } catch (Exception e) {
                     log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
                 }
+            }
+            if (secsUntilNextChange > 0) {
+                logDebug("Scheduling turning that switch off then.")
+                runIn(secsUntilNextChange, endShabbatRightNow)
+                logDebug("And scheduling an another update for a couple minutes after that.")
+                unschedule(push)
+                runIn(secsUntilNextChange + 120, push)
             }
         }
     }
@@ -182,6 +222,14 @@ def callApiFirstTimeToday() {
         logDebug("Calling API to get data for the first time today (${dateTimeToday.format("yyyy-MM-dd")})")
         callApi()
     }
+}
+
+Date stod(String datestring) {
+    return Date.parse("yyyy-MM-dd'T'HH:mm:ssX", datestring)
+}
+
+String dtos(Date dt) {
+    return dt.format("yyyy-MM-dd'T'HH:mm:ss.sssXX")
 }
 
 String dateStringConvert(String datestring) {
