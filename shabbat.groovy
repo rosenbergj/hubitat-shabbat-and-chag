@@ -32,11 +32,13 @@ preferences {
 
 // standard callback methods
 
-// def installed() {
-    // create child devices
-// }
-
-// def uninstalled () {}
+def installed() {
+    addChildDevice("hubitat", "Generic Component Switch", "${device.deviceNetworkId}-today",
+        [label: "${device.displayName} (Shabbat Today)", isComponent: true])
+    addChildDevice("hubitat", "Generic Component Switch", "${device.deviceNetworkId}-tonight",
+        [label: "${device.displayName} (Shabbat Tonight)", isComponent: true])
+    push()
+}
 
 def updated() {
     log.info "updated..."
@@ -52,12 +54,28 @@ def parse(String description) {
 // capability commands
 
 def push() {
-    runCmd(devicePath, deviceMethod)
+    callApi()
+}
+
+// methods to capture someone else triggering child devices
+
+void componentRefresh(cd){
+    log.info "received refresh request from ${cd.displayName}"
+}
+
+void componentOn(cd){
+    log.info "received on request from ${cd.displayName}"
+    getChildDevice(cd.deviceNetworkId).parse([[name:"switch", value:"on", descriptionText:"${cd.displayName} was turned on"]])
+}
+
+void componentOff(cd){
+    log.info "received off request from ${cd.displayName}"
+    getChildDevice(cd.deviceNetworkId).parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
 }
 
 // custom methods
 
-def runCmd(String varCommand, String method) {
+def callApi() {
     def lat = location.latitude.setScale(2, BigDecimal.ROUND_HALF_UP) // round for privacy
     def lon = location.longitude.setScale(2, BigDecimal.ROUND_HALF_UP)
     def url = "https://api.zmanapi.com/?lat=${lat}&lon=${lon}&chagdays=${settings.daysOfChag}"
@@ -86,6 +104,22 @@ def runCmd(String varCommand, String method) {
         sendEvent(name: "shabbatOrChagToday", value: isShabbatToday)
         sendEvent(name: "shabbatOrChagTonight", value: isShabbatTonight)
         sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
+
+        if (isShabbatToday) {
+            logDebug("Turning on child 'today' switch.")
+            childSwitchOn("today")
+        } else {
+            logDebug("Turning off child 'today' switch.")
+            childSwitchOff("today")
+        }
+        if (isShabbatTonight) {
+            logDebug("Turning on child 'tonight' switch.")
+            childSwitchOn("tonight")
+        } else {
+            logDebug("Turning off child 'tonight' switch.")
+            childSwitchOff("tonight")
+        }
+
         if (!isShabbatToday && isShabbatTonight) {
             if (settings.hubVarStartTime) {
                 logDebug("Assigning Shabbat/chag start time to hub variable.")
@@ -115,6 +149,16 @@ def runCmd(String varCommand, String method) {
             }
         }
     }
+}
+
+def childSwitchOn(String whichSwitch) {
+    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
+    cd.parse([[name:"switch", value:"on", descriptionText:"${cd.displayName} was turned on"]])
+}
+
+def childSwitchOff(String whichSwitch) {
+    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
+    cd.parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
 }
 
 String dateStringConvert(String datestring) {
