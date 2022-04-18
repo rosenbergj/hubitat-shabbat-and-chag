@@ -1,0 +1,16 @@
+{
+  "packageName": "Shabbat and Jewish holiday info driver",
+  "author": "Josh Rosenberg",
+  "version": "0.1.0",
+  "minimumHEVersion": "2.3.0",
+  "dateReleased": "2022-04-18",
+  "drivers": [
+    {
+      "id": "2414ebbb-4654-4b63-8540-e0c4277b0959",
+      "name": "Shabbat and Jewish holiday info switch",
+      "namespace": "ShabbatHolidayInfo",
+      "location": "https://raw.githubusercontent.com/rosenbergj/hubitat_shabbat_and_chag/main/shabbat.groovy",
+      "required": true
+    }
+  ]
+}

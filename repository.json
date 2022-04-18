@@ -1,0 +1,14 @@
+{
+  "author": "Josh Rosenberg",
+  "gitHubUrl": "https://github.com/rosenbergj/hubitat_shabbat_and_chag",
+  "packages": [
+    {
+      "id": "908fee0e-b2cc-4793-9b81-8f7b7aabb95d",
+      "name": "Shabbat and Jewish holiday info driver",
+      "category": "Control",
+      "location": "https://raw.githubusercontent.com/rosenbergj/hubitat_shabbat_and_chag/main/packageManifest.json",
+      "description": "Gain info on Shabbat and Jewish Holiday start and end days/times, for use in automations.",
+      "tags": ["Automations & Groups", "Tools & Utilities"]
+    }
+  ]
+}
