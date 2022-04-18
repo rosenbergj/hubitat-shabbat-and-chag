@@ -37,13 +37,13 @@ def installed() {
         [label: "${device.displayName} (Shabbat Today)", isComponent: true])
     addChildDevice("hubitat", "Generic Component Switch", "${device.deviceNetworkId}-tonight",
         [label: "${device.displayName} (Shabbat Tonight)", isComponent: true])
-    push()
 }
 
 def updated() {
     log.info "updated..."
     log.warn "debug logging is: ${logEnable == true}"
     if (logEnable) runIn(1800, logsOff)
+    runEvery1Hour(callApiFirstTimeToday)
     push()
 }
 
@@ -55,6 +55,18 @@ def parse(String description) {
 
 def push() {
     callApi()
+}
+
+// methods to tell our child devices to do things
+
+def childSwitchOn(String whichSwitch) {
+    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
+    cd.parse([[name:"switch", value:"on", descriptionText:"${cd.displayName} was turned on"]])
+}
+
+def childSwitchOff(String whichSwitch) {
+    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
+    cd.parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
 }
 
 // methods to capture someone else triggering child devices
@@ -151,14 +163,20 @@ def callApi() {
     }
 }
 
-def childSwitchOn(String whichSwitch) {
-    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
-    cd.parse([[name:"switch", value:"on", descriptionText:"${cd.displayName} was turned on"]])
-}
-
-def childSwitchOff(String whichSwitch) {
-    def cd = getChildDevice(device.deviceNetworkId + "-" + whichSwitch)
-    cd.parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
+def callApiFirstTimeToday() {
+    logDebug("Beginning hourly scheduled task.")
+    Date dateTimeToday = timeToday("12:00", location.timeZone)
+    if (!device.currentValue("retrievedAt")) {
+        logDebug("Calling API to get data for the first time ever (${dateTimeToday.format("yyyy-MM-dd")})")
+        return callApi()
+    }
+    Date dateTimeUpdated = Date.parse("yyyy-MM-dd'T'HH:mm:ss.sssXX", device.currentValue("retrievedAt"))
+    if (dateTimeToday.format("yyyy-MM-dd") == dateTimeUpdated.format("yyyy-MM-dd")) {
+        logDebug("Not calling API because we already have data from today (${dateTimeToday.format("yyyy-MM-dd")})")
+    } else {
+        logDebug("Calling API to get data for the first time today (${dateTimeToday.format("yyyy-MM-dd")})")
+        callApi()
+    }
 }
 
 String dateStringConvert(String datestring) {
