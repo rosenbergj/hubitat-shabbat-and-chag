@@ -15,7 +15,7 @@ The two main benefits of this driver over built-in Hubitat behavior (date/time a
 2. Install the device driver code following [these instructions](https://docs.hubitat.com/index.php?title=How_to_Install_Custom_Drivers). You can find the [driver code here](https://raw.githubusercontent.com/rosenbergj/hubitat_shabbat_and_chag/main/shabbat.groovy). (Hopefully this will be in the Hubitat Package Manager soon...)
 3. Create a new virtual device, and assign the Type as "Shabbat and Jewish holiday info switch". Give it any name, and save it.
 4. Edit the preferences of that device to select the number of days of chag to observe, and save device. **This step is required**; without it, the switch will fail to retrieve any info.
-5. (Optional) In your device Settings, go into the Hub Variables section. Create one or two new DateTime variables, which will indicate the start and end time of Shabbat*. Return to the preferences of your virtual device, and enter the variable names in the designated places. Save the device.
+5. (Optional) In your device Settings, go into the Hub Variables section. Create one or two new DateTime variables, which will indicate the start and end time of Shabbat*. Give those variables starting values that are at least a day in the past. Return to the preferences of your virtual device, and enter the variable names in the designated places. Save the device.
 
 \* From now on we'll refer to "Shabbat" for simplicity, but what we mean is "a period of 1-3 days of Shabbat, chag, or both, in some combination".
 
@@ -23,7 +23,7 @@ That's it!
 
 ## Device behavior
 
-* Within an hour or two after midnight every morning, the device will refresh by calling an external API to learn about whether Shabbat starts or ends later that day. Sometimes the device will want to refresh again later in the day to get more current info. You can also trigger another refresh at any time by "pushing" the button.
+* Within an hour or two after midnight every morning, the device will refresh by calling an [external API](https://github.com/rosenbergj/zmanimapi) to learn about whether Shabbat starts or ends later that day. Sometimes the device will want to refresh again later in the day to get more current info. You can also trigger another refresh at any time by "pushing" the button.
 * Every time the device is refreshed, 3 child devices are updated:
     - A switch indicates whether it is Shabbat that **day** (i.e. before sundown), regardless of the current time. On = yes; off = no.
     - A switch indicates whether it is Shabbat that **night** (i.e. after nightfall), regardless of the current time. On = yes; off = no.
