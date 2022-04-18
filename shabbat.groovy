@@ -1,7 +1,7 @@
 /*
  * Shabbat and Jewish holiday info driver
  *
- * Calls a  web API to learn which days are shabbat/holidays, and what time havdalah is
+ * Calls a web API to learn which days are shabbat/holidays, and what time havdalah is
  *
  */
 
@@ -11,6 +11,7 @@ metadata {
         capability "Actuator"
         capability "Momentary"
 
+        attribute "retrievedAt", "string"
         attribute "sunrise", "string"
         attribute "sunset", "string"
         attribute "nightfall", "string"
@@ -22,7 +23,7 @@ metadata {
 
 preferences {
     section("URIs") {
-        input name: "daysOfChag", type: "number", range: "1..2", title: "Days of chag", description: "Number of days you observe chag (does not apply to Rosh Hashanah or Yom Kippur)", required: true, defaultValue: 2
+        input name: "daysOfChag", type: "enum", options: ["1","2"], title: "Days of chag", description: "Number of days you observe chag (does not apply to Rosh Hashanah or Yom Kippur)", required: true
         input name: "hubVarStartTime", type: "string", title: "Hub variable for Shabbat/chag start", description: "Name of an already-created Hub variable in DateTime format. If Shabbat or a holiday starts today, that start time will be assigned to the specified variable.", required: false
         input name: "hubVarEndTime", type: "string", title: "Hub variable for Shabbat/chag end", description: "Name of an already-created Hub variable in DateTime format. If Shabbat or a holiday ends today, that end time (as 8.5 degrees) will be assigned to the specified variable.", required: false
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
@@ -41,6 +42,7 @@ def updated() {
     log.info "updated..."
     log.warn "debug logging is: ${logEnable == true}"
     if (logEnable) runIn(1800, logsOff)
+    push()
 }
 
 def parse(String description) {
@@ -77,6 +79,7 @@ def runCmd(String varCommand, String method) {
         Boolean isShabbatToday = results.shabbat_or_yom_tov_today.toBoolean()
         Boolean isShabbatTonight = results.shabbat_or_yom_tov_tonight.toBoolean()
         Boolean isShabbatNow = results.shabbat_or_yom_tov_now.toBoolean()
+        sendEvent(name: "retrievedAt", value: dateStringConvert(results.now))
         sendEvent(name: "sunrise", value: dateStringConvert(results.sunrise))
         sendEvent(name: "sunset", value: dateStringConvert(results.sunset))
         sendEvent(name: "nightfall", value: dateStringConvert(results.jewish_twilight_end))
