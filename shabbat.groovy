@@ -6,7 +6,7 @@
  */
 
 metadata {
-    definition(name: "Shabbat and Jewish holiday info switch", namespace: "ShabbatHolidayInfo", author: "Josh Rosenberg", importUrl: "https://raw.githubusercontent.com/rosenbergj/hubitat_shabbat_and_chag/main/shabbat.groovy") {
+    definition(name: "Shabbat and Jewish holiday info switch", namespace: "ShabbatHolidayInfo", author: "Josh Rosenberg", importUrl: "https://raw.githubusercontent.com/rosenbergj/hubitat-shabbat-and-chag/main/shabbat.groovy") {
         capability "Sensor"
         capability "Actuator"
         capability "Momentary"
