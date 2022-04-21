@@ -48,7 +48,7 @@ def updated() {
     log.info "updated..."
     log.warn "debug logging is: ${logEnable == true}"
     if (logEnable) runIn(1800, logsOff)
-    runEvery1Hour(callApiFirstTimeToday)
+    runEvery1Hour(callApiIfFirstTimeToday)
     push()
 }
 
@@ -167,7 +167,7 @@ def callApi() {
         }
 
         if (!isShabbatToday && isShabbatTonight) {
-            long secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
+            int secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
             sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
             logDebug("Shabbat/chag is starting (or did start) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarStartTime) {
@@ -184,14 +184,14 @@ def callApi() {
             }
             if (secsUntilNextChange > 0) {
                 logDebug("Scheduling turning that switch on then.")
-                runIn(max(secsUntilNextChange-5, 5), startShabbatRightNow)
+                runIn(Math.max(secsUntilNextChange-10, 5), startShabbatRightNow)
                 logDebug("And scheduling an another update for a couple minutes after that.")
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
             }
         }
         if (isShabbatToday && !isShabbatTonight) {
-            long secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
+            int secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
             sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
             logDebug("Shabbat/chag is ending (or did end) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarEndTime) {
@@ -208,7 +208,7 @@ def callApi() {
             }
             if (secsUntilNextChange > 0) {
                 logDebug("Scheduling turning that switch off then.")
-                runIn(max(secsUntilNextChange+5,5), endShabbatRightNow)
+                runIn(Math.max(secsUntilNextChange+5,5), endShabbatRightNow)
                 logDebug("And scheduling an another update for a couple minutes after that.")
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
@@ -217,7 +217,7 @@ def callApi() {
     }
 }
 
-def callApiFirstTimeToday() {
+def callApiIfFirstTimeToday() {
     logDebug("Beginning hourly scheduled task.")
     Date dateTimeToday = timeToday("12:00", location.timeZone)
     if (!device.currentValue("retrievedAt")) {
