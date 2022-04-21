@@ -10,6 +10,7 @@ metadata {
         capability "Sensor"
         capability "Actuator"
         capability "Momentary"
+        capability "Refresh"
 
         attribute "retrievedAt", "string"
         attribute "sunrise", "string"
@@ -58,6 +59,10 @@ def parse(String description) {
 // capability commands
 
 def push() {
+    callApi()
+}
+
+def refresh() {
     callApi()
 }
 
