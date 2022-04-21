@@ -23,7 +23,7 @@ That's it!
 
 ## Device behavior
 
-* Within an hour or two after midnight every morning, the device will refresh by calling an [external API](https://github.com/rosenbergj/zmanimapi) to learn about whether Shabbat starts or ends later that day. Sometimes the device will want to refresh again later in the day to get more current info. You can also trigger another refresh at any time by "pushing" the button.
+* Within an hour or two after midnight every morning, the device will refresh by calling an [external API](https://github.com/rosenbergj/zmanimapi) to learn about whether Shabbat starts or ends later that day. Sometimes the device will want to refresh again later in the day to get more current info. You can also trigger another refresh at any time by "pushing" the button or calling the "refresh" command.
 * Every time the device is refreshed, 3 child devices are updated:
     - A switch indicates whether it is Shabbat that **day** (i.e. before sundown), regardless of the current time. On = yes; off = no.
     - A switch indicates whether it is Shabbat that **night** (i.e. after nightfall), regardless of the current time. On = yes; off = no.
