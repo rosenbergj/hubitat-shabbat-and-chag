@@ -6,7 +6,7 @@
  */
 
 metadata {
-    definition(name: "Shabbat and Jewish holiday info switch", namespace: "ShabbatHolidayInfo", author: "Josh Rosenberg", importUrl: "https://raw.githubusercontent.com/rosenbergj/hubitat-shabbat-and-chag/main/shabbat.groovy") {
+    definition(name: "Shabbat and Jewish Holiday Info", namespace: "ShabbatHolidayInfo", author: "Josh Rosenberg", importUrl: "https://raw.githubusercontent.com/rosenbergj/hubitat-shabbat-and-chag/main/shabbat.groovy") {
         capability "Sensor"
         capability "Actuator"
         capability "Momentary"
@@ -168,11 +168,11 @@ def callApi() {
 
         if (!isShabbatToday && isShabbatTonight) {
             int secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
+            String sunsetTime = dateStringConvert(results.sunset)
             sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
             logDebug("Shabbat/chag is starting (or did start) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarStartTime) {
                 logDebug("Assigning Shabbat/chag start time to hub variable.")
-                String sunsetTime = dateStringConvert(results.sunset)
                 try {
                     success = setGlobalVar(settings.hubVarStartTime, sunsetTime)
                     if (!success) {
@@ -183,8 +183,13 @@ def callApi() {
                 }
             }
             if (secsUntilNextChange > 0) {
-                logDebug("Scheduling turning that switch on then.")
-                runIn(Math.max(secsUntilNextChange-10, 5), startShabbatRightNow)
+                if (secsUntilNextChange > 10) {
+                    logDebug("Scheduling turning that switch on then.")
+                    runOnce(sunsetTime, startShabbatRightNow)
+                } else {
+                    pauseExecution(secsUntilNextChange*1000)
+                    startShabbatRightNow()
+                }
                 logDebug("And scheduling an another update for a couple minutes after that.")
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
@@ -192,11 +197,11 @@ def callApi() {
         }
         if (isShabbatToday && !isShabbatTonight) {
             int secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
+            String nightfallTime = dateStringConvert(results.jewish_twilight_end)
             sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
             logDebug("Shabbat/chag is ending (or did end) in ${secsUntilNextChange} seconds.")
             if (settings.hubVarEndTime) {
                 logDebug("Assigning Shabbat/chag end time to hub variable.")
-                String nightfallTime = dateStringConvert(results.jewish_twilight_end)
                 try {
                     success = setGlobalVar(settings.hubVarEndTime, nightfallTime)
                     if (!success) {
@@ -207,8 +212,13 @@ def callApi() {
                 }
             }
             if (secsUntilNextChange > 0) {
-                logDebug("Scheduling turning that switch off then.")
-                runIn(Math.max(secsUntilNextChange+5,5), endShabbatRightNow)
+                if (secsUntilNextChange > 10) {
+                    logDebug("Scheduling turning that switch off then.")
+                    runOnce(nightfallTime, endShabbatRightNow)
+                } else {
+                    pauseExecution(secsUntilNextChange*1000)
+                    endShabbatRightNow()
+                }
                 logDebug("And scheduling an another update for a couple minutes after that.")
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
