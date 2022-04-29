@@ -12,7 +12,7 @@ The two main benefits of this driver over built-in Hubitat behavior (date/time a
 ## Installation and setup
 
 1. Make sure that in Hub Details, your time zone, latitude, and longitude are set correctly.
-2. Install the device driver code following [these instructions](https://docs.hubitat.com/index.php?title=How_to_Install_Custom_Drivers). You can find the [driver code here](https://raw.githubusercontent.com/rosenbergj/hubitat-shabbat-and-chag/main/shabbat.groovy). (Hopefully this will be in the Hubitat Package Manager soon...)
+2. Install the device driver code following [these instructions](https://docs.hubitat.com/index.php?title=How_to_Install_Custom_Drivers). You can find the [driver code here](https://raw.githubusercontent.com/rosenbergj/hubitat-shabbat-and-chag/main/shabbat.groovy). Or use Hubitat Package Manager.
 3. Create a new virtual device, and assign the Type as "Shabbat and Jewish holiday info switch". Give it any name, and save it.
 4. Edit the preferences of that device to select the number of days of chag to observe, and save device. **This step is required**; without it, the switch will fail to retrieve any info.
 5. (Optional) In your device Settings, go into the Hub Variables section. Create one or two new DateTime variables, which will indicate the start and end time of Shabbat*. Give those variables starting values that are at least a day in the past. Return to the preferences of your virtual device, and enter the variable names in the designated places. Save the device.
