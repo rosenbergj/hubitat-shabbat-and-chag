@@ -1,9 +1,9 @@
 {
   "packageName": "Shabbat and Jewish holiday info driver",
   "author": "Josh Rosenberg",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "minimumHEVersion": "2.3.0",
-  "dateReleased": "2022-04-18",
+  "dateReleased": "2023-12-07",
   "documentationLink": "https://github.com/rosenbergj/hubitat-shabbat-and-chag/blob/main/README.md",
   "communityLink": "https://community.hubitat.com/t/beta-release-shabbat-and-jewish-holiday-info-virtual-driver/93095",
   "drivers": [
