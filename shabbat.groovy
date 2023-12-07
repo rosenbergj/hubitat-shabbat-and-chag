@@ -20,6 +20,9 @@ metadata {
         attribute "shabbatOrChagTonight", "boolean"
         attribute "shabbatOrChagNow", "boolean"
         attribute "secsUntilNextChange", "number"
+        attribute "hanukkahToday", "number"
+        attribute "hanukkahTonight", "number"
+        attribute "hanukkahNow", "number"
     }
 }
 
