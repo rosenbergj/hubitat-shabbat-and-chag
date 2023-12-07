@@ -4,6 +4,7 @@
   "version": "0.2.1",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2023-12-07",
+  "releaseNotes": "0.2.1: Add support for Hanukkah attributes",
   "documentationLink": "https://github.com/rosenbergj/hubitat-shabbat-and-chag/blob/main/README.md",
   "communityLink": "https://community.hubitat.com/t/beta-release-shabbat-and-jewish-holiday-info-virtual-driver/93095",
   "drivers": [
