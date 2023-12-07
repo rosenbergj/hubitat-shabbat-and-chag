@@ -142,6 +142,22 @@ def callApi() {
         sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
         unschedule(startShabbatRightNow)
         unschedule(endShabbatRightNow)
+	
+	if (results.hanukkah_now) {
+	    sendEvent(name: "hanukkahNow", value: results.hanukkah_now)
+	} else {
+	    sendEvent(name: "hanukkahNow", value: 0)
+	}
+	if (results.hanukkah_today) {
+	    sendEvent(name: "hanukkahToday", value: results.hanukkah_today)
+	} else {
+	    sendEvent(name: "hanukkahToday", value: 0)
+	}
+	if (results.hanukkah_tonight) {
+	    sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight)
+	} else {
+	    sendEvent(name: "hanukkahTonight", value: 0)
+	}
 
 
         if (isShabbatToday) {
