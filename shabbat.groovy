@@ -22,7 +22,6 @@ metadata {
         attribute "secsUntilNextChange", "number"
         attribute "hanukkahToday", "number"
         attribute "hanukkahTonight", "number"
-        attribute "hanukkahNow", "number"
     }
 }
 
@@ -155,7 +154,6 @@ def processResults(results) {
 
     sendEvent(name: "hanukkahToday",   value: results.hanukkah_today   ?: 0)
     sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight ?: 0)
-    sendEvent(name: "hanukkahNow",     value: results.hanukkah_now     ?: 0)
 
     childSwitchToState("today",   isShabbatToday)
     childSwitchToState("tonight", isShabbatTonight)
