@@ -197,7 +197,7 @@ def callApi() {
             if (settings.hubVarStartTime) {
                 logDebug("Assigning Shabbat/chag start time to hub variable.")
                 try {
-                    success = setGlobalVar(settings.hubVarStartTime, sunsetTime)
+                    def success = setGlobalVar(settings.hubVarStartTime, sunsetTime)
                     if (!success) {
                         log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
                     }
@@ -227,7 +227,7 @@ def callApi() {
             if (settings.hubVarEndTime) {
                 logDebug("Assigning Shabbat/chag end time to hub variable.")
                 try {
-                    success = setGlobalVar(settings.hubVarEndTime, nightfallTime)
+                    def success = setGlobalVar(settings.hubVarEndTime, nightfallTime)
                     if (!success) {
                         log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
                     }
