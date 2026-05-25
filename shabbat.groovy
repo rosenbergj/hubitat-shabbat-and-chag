@@ -83,6 +83,11 @@ def childSwitchOff(String whichSwitch) {
     cd.parse([[name:"switch", value:"off", descriptionText:"${cd.displayName} was turned off"]])
 }
 
+def childSwitchToState(String whichSwitch, Boolean on) {
+    logDebug("Turning ${on ? 'on' : 'off'} child '${whichSwitch}' switch.")
+    if (on) { childSwitchOn(whichSwitch) } else { childSwitchOff(whichSwitch) }
+}
+
 def startShabbatRightNow() {
     logDebug("Updating the shabbat-now attribute to true.")
     sendEvent(name: "shabbatOrChagNow", value: true)
@@ -120,136 +125,105 @@ def callApi() {
         offsetString = "&offset=" + settings.debugOffset
     }
     def url = "https://api.zmanapi.com/?lat=${lat}&lon=${lon}&chagdays=${settings.daysOfChag}${offsetString}"
-    def results = ""
     logDebug("Requesting data from ${url}")
     try {
         httpGet(url) { resp ->
             if (resp.success) {
                 logDebug("retrieved data from URL: " + resp.getData())
-                results = resp.getData().results
+                processResults(resp.getData().results)
             }
         }
     } catch (Exception e) {
         log.warn "Call to URL failed: ${e.message}"
     }
-    if (results) {
-        logDebug("Assigning results as attributes.")
-        Boolean isShabbatToday = results.shabbat_or_yom_tov_today.toBoolean()
-        Boolean isShabbatTonight = results.shabbat_or_yom_tov_tonight.toBoolean()
-        Boolean isShabbatNow = results.shabbat_or_yom_tov_now.toBoolean()
-        sendEvent(name: "retrievedAt", value: dateStringConvert(results.now))
-        sendEvent(name: "sunrise", value: dateStringConvert(results.sunrise))
-        sendEvent(name: "sunset", value: dateStringConvert(results.sunset))
-        sendEvent(name: "nightfall", value: dateStringConvert(results.jewish_twilight_end))
-        sendEvent(name: "shabbatOrChagToday", value: isShabbatToday)
-        sendEvent(name: "shabbatOrChagTonight", value: isShabbatTonight)
-        sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
-        unschedule(startShabbatRightNow)
-        unschedule(endShabbatRightNow)
+}
 
-        if (results.hanukkah_now) {
-            sendEvent(name: "hanukkahNow", value: results.hanukkah_now)
-        } else {
-            sendEvent(name: "hanukkahNow", value: 0)
-        }
-        if (results.hanukkah_today) {
-            sendEvent(name: "hanukkahToday", value: results.hanukkah_today)
-        } else {
-            sendEvent(name: "hanukkahToday", value: 0)
-        }
-        if (results.hanukkah_tonight) {
-            sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight)
-        } else {
-            sendEvent(name: "hanukkahTonight", value: 0)
-        }
+def processResults(results) {
+    logDebug("Assigning results as attributes.")
+    Boolean isShabbatToday = results.shabbat_or_yom_tov_today.toBoolean()
+    Boolean isShabbatTonight = results.shabbat_or_yom_tov_tonight.toBoolean()
+    Boolean isShabbatNow = results.shabbat_or_yom_tov_now.toBoolean()
+    sendEvent(name: "retrievedAt", value: dateStringConvert(results.now))
+    sendEvent(name: "sunrise", value: dateStringConvert(results.sunrise))
+    sendEvent(name: "sunset", value: dateStringConvert(results.sunset))
+    sendEvent(name: "nightfall", value: dateStringConvert(results.jewish_twilight_end))
+    sendEvent(name: "shabbatOrChagToday", value: isShabbatToday)
+    sendEvent(name: "shabbatOrChagTonight", value: isShabbatTonight)
+    sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
+    unschedule(startShabbatRightNow)
+    unschedule(endShabbatRightNow)
 
+    sendEvent(name: "hanukkahToday",   value: results.hanukkah_today   ?: 0)
+    sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight ?: 0)
+    sendEvent(name: "hanukkahNow",     value: results.hanukkah_now     ?: 0)
 
-        if (isShabbatToday) {
-            logDebug("Turning on child 'today' switch.")
-            childSwitchOn("today")
-        } else {
-            logDebug("Turning off child 'today' switch.")
-            childSwitchOff("today")
-        }
-        if (isShabbatTonight) {
-            logDebug("Turning on child 'tonight' switch.")
-            childSwitchOn("tonight")
-        } else {
-            logDebug("Turning off child 'tonight' switch.")
-            childSwitchOff("tonight")
-        }
-        if (isShabbatNow) {
-            logDebug("Turning on child 'now' switch.")
-            childSwitchOn("now")
-        } else {
-            logDebug("Turning off child 'now' switch.")
-            childSwitchOff("now")
-        }
+    childSwitchToState("today",   isShabbatToday)
+    childSwitchToState("tonight", isShabbatTonight)
+    childSwitchToState("now",     isShabbatNow)
 
-        // Reboot recovery works naturally: updated() → push() → callApi() re-reads isShabbatNow
-        // and corrects the switch. Whichever branch below applies re-schedules the next transition.
-        // No reboot leaves the switch permanently wrong.
-        if (!isShabbatToday && isShabbatTonight) {
-            int secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
-            String sunsetTime = dateStringConvert(results.sunset)
-            sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
-            logDebug("Shabbat/chag is starting (or did start) in ${secsUntilNextChange} seconds.")
-            if (settings.hubVarStartTime) {
-                logDebug("Assigning Shabbat/chag start time to hub variable.")
-                try {
-                    def success = setGlobalVar(settings.hubVarStartTime, sunsetTime)
-                    if (!success) {
-                        log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
-                    }
-                } catch (Exception e) {
-                    log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
-                }
+    scheduleNextTransition(results, isShabbatToday, isShabbatTonight)
+}
+
+def scheduleNextTransition(results, Boolean isShabbatToday, Boolean isShabbatTonight) {
+    // Reboot recovery works naturally: updated() → push() → callApi() re-reads isShabbatNow
+    // and corrects the switch. Whichever branch below applies re-schedules the next transition.
+    // No reboot leaves the switch permanently wrong.
+    if (!isShabbatToday && isShabbatTonight) {
+        int secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
+        String sunsetTime = dateStringConvert(results.sunset)
+        sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
+        logDebug("Shabbat/chag is starting (or did start) in ${secsUntilNextChange} seconds.")
+        if (settings.hubVarStartTime) {
+            logDebug("Assigning Shabbat/chag start time to hub variable.")
+            try {
+                def success = setGlobalVar(settings.hubVarStartTime, sunsetTime)
+                if (!success) log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
+            } catch (Exception e) {
+                log.warn "Failed to assign time ${sunsetTime} to Hub variable ${settings.hubVarStartTime}"
             }
-            if (secsUntilNextChange > 0) {
-                if (secsUntilNextChange > 10) {
-                    logDebug("Scheduling turning that switch on then.")
-                    runOnce(sunsetTime, startShabbatRightNow)
-                } else {
-                    // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
-                    pauseExecution(secsUntilNextChange*1000)
-                    startShabbatRightNow()
-                }
-                logDebug("And scheduling an another update for a couple minutes after that.")
-                unschedule(push)
-                runIn(secsUntilNextChange + 120, push)
-            }
-        } else if (isShabbatToday && !isShabbatTonight) {
-            int secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
-            String nightfallTime = dateStringConvert(results.jewish_twilight_end)
-            sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
-            logDebug("Shabbat/chag is ending (or did end) in ${secsUntilNextChange} seconds.")
-            if (settings.hubVarEndTime) {
-                logDebug("Assigning Shabbat/chag end time to hub variable.")
-                try {
-                    def success = setGlobalVar(settings.hubVarEndTime, nightfallTime)
-                    if (!success) {
-                        log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
-                    }
-                } catch (Exception e) {
-                    log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
-                }
-            }
-            if (secsUntilNextChange > 0) {
-                if (secsUntilNextChange > 10) {
-                    logDebug("Scheduling turning that switch off then.")
-                    runOnce(nightfallTime, endShabbatRightNow)
-                } else {
-                    // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
-                    pauseExecution(secsUntilNextChange*1000)
-                    endShabbatRightNow()
-                }
-                logDebug("And scheduling an another update for a couple minutes after that.")
-                unschedule(push)
-                runIn(secsUntilNextChange + 120, push)
-            }
-        } else {
-            sendEvent(name: "secsUntilNextChange", value: -1)
         }
+        if (secsUntilNextChange > 0) {
+            if (secsUntilNextChange > 10) {
+                logDebug("Scheduling turning that switch on then.")
+                runOnce(sunsetTime, startShabbatRightNow)
+            } else {
+                // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
+                pauseExecution(secsUntilNextChange*1000)
+                startShabbatRightNow()
+            }
+            logDebug("And scheduling another update for a couple minutes after that.")
+            unschedule(push)
+            runIn(secsUntilNextChange + 120, push)
+        }
+    } else if (isShabbatToday && !isShabbatTonight) {
+        int secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
+        String nightfallTime = dateStringConvert(results.jewish_twilight_end)
+        sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
+        logDebug("Shabbat/chag is ending (or did end) in ${secsUntilNextChange} seconds.")
+        if (settings.hubVarEndTime) {
+            logDebug("Assigning Shabbat/chag end time to hub variable.")
+            try {
+                def success = setGlobalVar(settings.hubVarEndTime, nightfallTime)
+                if (!success) log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
+            } catch (Exception e) {
+                log.warn "Failed to assign time ${nightfallTime} to Hub variable ${settings.hubVarEndTime}"
+            }
+        }
+        if (secsUntilNextChange > 0) {
+            if (secsUntilNextChange > 10) {
+                logDebug("Scheduling turning that switch off then.")
+                runOnce(nightfallTime, endShabbatRightNow)
+            } else {
+                // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
+                pauseExecution(secsUntilNextChange*1000)
+                endShabbatRightNow()
+            }
+            logDebug("And scheduling another update for a couple minutes after that.")
+            unschedule(push)
+            runIn(secsUntilNextChange + 120, push)
+        }
+    } else {
+        sendEvent(name: "secsUntilNextChange", value: -1)
     }
 }
 
