@@ -146,22 +146,22 @@ def callApi() {
         sendEvent(name: "shabbatOrChagNow", value: isShabbatNow)
         unschedule(startShabbatRightNow)
         unschedule(endShabbatRightNow)
-	
-	if (results.hanukkah_now) {
-	    sendEvent(name: "hanukkahNow", value: results.hanukkah_now)
-	} else {
-	    sendEvent(name: "hanukkahNow", value: 0)
-	}
-	if (results.hanukkah_today) {
-	    sendEvent(name: "hanukkahToday", value: results.hanukkah_today)
-	} else {
-	    sendEvent(name: "hanukkahToday", value: 0)
-	}
-	if (results.hanukkah_tonight) {
-	    sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight)
-	} else {
-	    sendEvent(name: "hanukkahTonight", value: 0)
-	}
+
+        if (results.hanukkah_now) {
+            sendEvent(name: "hanukkahNow", value: results.hanukkah_now)
+        } else {
+            sendEvent(name: "hanukkahNow", value: 0)
+        }
+        if (results.hanukkah_today) {
+            sendEvent(name: "hanukkahToday", value: results.hanukkah_today)
+        } else {
+            sendEvent(name: "hanukkahToday", value: 0)
+        }
+        if (results.hanukkah_tonight) {
+            sendEvent(name: "hanukkahTonight", value: results.hanukkah_tonight)
+        } else {
+            sendEvent(name: "hanukkahTonight", value: 0)
+        }
 
 
         if (isShabbatToday) {
@@ -186,6 +186,9 @@ def callApi() {
             childSwitchOff("now")
         }
 
+        // Reboot recovery works naturally: updated() → push() → callApi() re-reads isShabbatNow
+        // and corrects the switch. Whichever branch below applies re-schedules the next transition.
+        // No reboot leaves the switch permanently wrong.
         if (!isShabbatToday && isShabbatTonight) {
             int secsUntilNextChange = (stod(results.sunset).getTime() - stod(results.now).getTime())/1000
             String sunsetTime = dateStringConvert(results.sunset)
@@ -207,6 +210,7 @@ def callApi() {
                     logDebug("Scheduling turning that switch on then.")
                     runOnce(sunsetTime, startShabbatRightNow)
                 } else {
+                    // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
                     pauseExecution(secsUntilNextChange*1000)
                     startShabbatRightNow()
                 }
@@ -236,6 +240,7 @@ def callApi() {
                     logDebug("Scheduling turning that switch off then.")
                     runOnce(nightfallTime, endShabbatRightNow)
                 } else {
+                    // Too close to schedule reliably; block the thread briefly instead (intentionally rare)
                     pauseExecution(secsUntilNextChange*1000)
                     endShabbatRightNow()
                 }
