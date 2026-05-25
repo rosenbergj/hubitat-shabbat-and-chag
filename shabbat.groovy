@@ -125,7 +125,6 @@ def callApi() {
     try {
         httpGet(url) { resp ->
             if (resp.success) {
-                gotData = true
                 logDebug("retrieved data from URL: " + resp.getData())
                 results = resp.getData().results
             }
@@ -266,10 +265,6 @@ def callApiIfFirstTimeToday() {
 
 Date stod(String datestring) {
     return Date.parse("yyyy-MM-dd'T'HH:mm:ssX", datestring)
-}
-
-String dtos(Date dt) {
-    return dt.format("yyyy-MM-dd'T'HH:mm:ss.sssXX")
 }
 
 String dateStringConvert(String datestring) {
