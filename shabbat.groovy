@@ -45,6 +45,10 @@ def installed() {
         [label: "${device.displayName} (Shabbat Now)", isComponent: true])
 }
 
+def uninstalled() {
+    getChildDevices().each { deleteChildDevice(it.deviceNetworkId) }
+}
+
 def updated() {
     log.info "updated..."
     log.warn "debug logging is: ${logEnable == true}"
