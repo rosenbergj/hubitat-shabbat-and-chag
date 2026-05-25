@@ -218,8 +218,7 @@ def callApi() {
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
             }
-        }
-        if (isShabbatToday && !isShabbatTonight) {
+        } else if (isShabbatToday && !isShabbatTonight) {
             int secsUntilNextChange = (stod(results.jewish_twilight_end).getTime() - stod(results.now).getTime())/1000
             String nightfallTime = dateStringConvert(results.jewish_twilight_end)
             sendEvent(name: "secsUntilNextChange", value: secsUntilNextChange)
