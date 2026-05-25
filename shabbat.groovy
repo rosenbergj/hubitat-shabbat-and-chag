@@ -247,6 +247,8 @@ def callApi() {
                 unschedule(push)
                 runIn(secsUntilNextChange + 120, push)
             }
+        } else {
+            sendEvent(name: "secsUntilNextChange", value: -1)
         }
     }
 }
